@@ -10,41 +10,40 @@ properties([
 ])
 */
 
-node('digitalocean && ubuntu-16.04 && 16gb && android-7.1') {
-  stage 'System'
-  sh '''#!/bin/bash
-  sudo apt-get update -y
-  sudo apt-get install -y openjdk-8-jdk python git-core gnupg flex bison gperf build-essential \
-    zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
-    lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache \
-    libgl1-mesa-dev libxml2-utils xsltproc unzip mtools u-boot-tools \
-    htop iotop sysstat iftop pigz bc device-tree-compiler lunzip
-  '''
+node('docker && android-build') {
+  timestamps {
+    wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
+      stage "Environment"
+      dir('build-environment') {
+        checkout scm
+      }
+      def environment = docker.build('build-environment:android-7.1', 'build-environment')
 
-  sh '''#!/bin/bash
-  set -xe
-  mkdir -p ~/bin
-  curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-  chmod a+x ~/bin/repo
-  '''
-
-  ws('/android') {
-    timestamps {
-      wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-        stage 'Prepare'
-        sh 'rm -f *.gz'
-
+      environment.inside("-v /var/lib/ccache:/var/lib/ccache") {
         stage 'Sources'
         sh '''#!/bin/bash
 
         set -xe
 
-        ~/bin/repo init -u https://android.googlesource.com/platform/manifest -b android-7.1.0_r7 --depth=1
+        repo init -u https://android.googlesource.com/platform/manifest -b android-7.1.0_r7 --depth=1
         rm -rf .repo/local_manifests
         git clone https://github.com/ayufan-pine64/local_manifests -b nougat-7.1 .repo/local_manifests
 
-        ~/bin/repo sync -j 20 -c --force-sync
+        repo sync -j 20 -c --force-sync
         '''
+
+        withEnv([
+          "VERSION=$VERSION",
+          'TARGET=tulip_chiphd-userdebug',
+          'USE_CCACHE=true',
+          'CCACHE_DIR=/var/lib/ccache',
+        ]) {
+            stage 'Prepare'
+            sh '''#!/bin/bash
+              prebuilts/misc/linux-x86/ccache/ccache -M 0 -F 0
+              rm -f *.gz
+            '''
+        }
 
         withEnv([
           "VERSION=$VERSION",
@@ -58,7 +57,7 @@ node('digitalocean && ubuntu-16.04 && 16gb && android-7.1') {
             set -ve
             shopt -s nullglob
 
-            ~/bin/repo manifest -r -o manifest.xml
+            repo manifest -r -o manifest.xml
 
             curl --fail -X PUT -H "Authorization: token $GITHUB_TOKEN" \
               -d "{\\"message\\":\\"Add $VERSION changes\\", \\"committer\\":{\\"name\\":\\"Jenkins\\",\\"email\\":\\"jenkins@ayufan.eu\\"},\\"content\\":\\"$(echo "$CHANGES" | base64 -w 0)\\"}" \
@@ -72,35 +71,11 @@ node('digitalocean && ubuntu-16.04 && 16gb && android-7.1') {
 
         withEnv([
           "VERSION=$VERSION",
-          'TARGET=tulip_chiphd_pinebook-userdebug',
-          'USE_CCACHE=true',
-          'CCACHE_DIR=/ccache',
-          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation'
-        ]) {
-          stage 'Pinebook'
-          retry(2) {
-            sh '''#!/bin/bash
-              source build/envsetup.sh
-              lunch "${TARGET}"
-              make -j$(($(nproc)+1))
-            '''
-          }
-
-          stage 'Image Pinebook'
-          sh '''#!/bin/bash
-            source build/envsetup.sh
-            lunch "${TARGET}"
-            set -xe
-            sdcard_image "${JOB_NAME}-pinebook-v${VERSION}-r${BUILD_NUMBER}.img.gz" pinebook
-          '''
-        }
-
-        withEnv([
-          "VERSION=$VERSION",
           'TARGET=tulip_chiphd-userdebug',
           'USE_CCACHE=true',
-          'CCACHE_DIR=/ccache',
-          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation'
+          'CCACHE_DIR=/var/lib/ccache',
+          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
         ]) {
           stage 'Regular'
           retry(2) {
@@ -122,10 +97,36 @@ node('digitalocean && ubuntu-16.04 && 16gb && android-7.1') {
 
         withEnv([
           "VERSION=$VERSION",
+          'TARGET=tulip_chiphd_pinebook-userdebug',
+          'USE_CCACHE=true',
+          'CCACHE_DIR=/var/lib/ccache',
+          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
+        ]) {
+          stage 'Pinebook'
+          retry(2) {
+            sh '''#!/bin/bash
+              source build/envsetup.sh
+              lunch "${TARGET}"
+              make -j$(($(nproc)+1))
+            '''
+          }
+
+          stage 'Image Pinebook'
+          sh '''#!/bin/bash
+            source build/envsetup.sh
+            lunch "${TARGET}"
+            set -xe
+            sdcard_image "${JOB_NAME}-pinebook-v${VERSION}-r${BUILD_NUMBER}.img.gz" pinebook
+          '''
+        }
+        withEnv([
+          "VERSION=$VERSION",
           'TARGET=tulip_chiphd_atv-userdebug',
           'USE_CCACHE=true',
-          'CCACHE_DIR=/ccache',
-          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation'
+          'CCACHE_DIR=/var/lib/ccache',
+          'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
         ]) {
           stage 'TV'
           retry(2) {
@@ -156,11 +157,6 @@ node('digitalocean && ubuntu-16.04 && 16gb && android-7.1') {
           sh '''#!/bin/bash
             set -xe
             shopt -s nullglob
-
-            export PATH=$(pwd)/bin/linux/amd64:$PATH
-            if ! which github-release; then
-              curl -L https://github.com/aktau/github-release/releases/download/v0.6.2/linux-amd64-github-release.tar.bz2 | tar jx
-            fi
 
             github-release release \
                 --tag "${VERSION}" \
