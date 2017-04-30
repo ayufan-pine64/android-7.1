@@ -16,6 +16,3 @@ RUN curl -L https://github.com/aktau/github-release/releases/download/v0.6.2/lin
 
 RUN which repo && \
     which github-release
-
-ENV USER=root \
-    HOME=/root
