@@ -19,7 +19,7 @@ node('docker && android-build') {
       }
       def environment = docker.build('build-environment:android-7.1', 'build-environment')
 
-      environment.inside("-v /var/lib/ccache:/var/lib/ccache") {
+      environment.inside {
         stage 'Sources'
         sh '''#!/bin/bash
 
@@ -73,7 +73,6 @@ node('docker && android-build') {
           "VERSION=$VERSION",
           'TARGET=tulip_chiphd-userdebug',
           'USE_CCACHE=true',
-          'CCACHE_DIR=/var/lib/ccache',
           'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
@@ -82,6 +81,7 @@ node('docker && android-build') {
             sh '''#!/bin/bash
               source build/envsetup.sh
               lunch "${TARGET}"
+              export CCACHE_DIR=$PWD/ccache
               make -j
             '''
           }
@@ -99,7 +99,6 @@ node('docker && android-build') {
           "VERSION=$VERSION",
           'TARGET=tulip_chiphd_pinebook-userdebug',
           'USE_CCACHE=true',
-          'CCACHE_DIR=/var/lib/ccache',
           'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
@@ -108,6 +107,7 @@ node('docker && android-build') {
             sh '''#!/bin/bash
               source build/envsetup.sh
               lunch "${TARGET}"
+              export CCACHE_DIR=$PWD/ccache
               make -j$(($(nproc)+1))
             '''
           }
@@ -124,7 +124,6 @@ node('docker && android-build') {
           "VERSION=$VERSION",
           'TARGET=tulip_chiphd_atv-userdebug',
           'USE_CCACHE=true',
-          'CCACHE_DIR=/var/lib/ccache',
           'ANDROID_JACK_VM_ARGS=-Xmx4g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
@@ -133,6 +132,7 @@ node('docker && android-build') {
             sh '''#!/bin/bash
               source build/envsetup.sh
               lunch "${TARGET}"
+              export CCACHE_DIR=$PWD/ccache
               make -j
             '''
           }
