@@ -25,6 +25,9 @@ node('docker && android-build') {
 
         set -xe
 
+        export HOME=$WORKSPACE
+        export USER=jenkins
+
         repo init -u https://android.googlesource.com/platform/manifest -b android-7.1.0_r7 --depth=1
         rm -rf .repo/local_manifests
         git clone https://github.com/ayufan-pine64/local_manifests -b nougat-7.1 .repo/local_manifests
@@ -57,6 +60,9 @@ node('docker && android-build') {
             set -ve
             shopt -s nullglob
 
+            export HOME=$WORKSPACE
+            export USER=jenkins
+
             repo manifest -r -o manifest.xml
 
             curl --fail -X PUT -H "Authorization: token $GITHUB_TOKEN" \
@@ -79,10 +85,13 @@ node('docker && android-build') {
           stage 'Regular'
           retry(2) {
             sh '''#!/bin/bash
+              export CCACHE_DIR=$PWD/ccache
+              export HOME=$WORKSPACE
+              export USER=jenkins
+
               source build/envsetup.sh
               lunch "${TARGET}"
-              export CCACHE_DIR=$PWD/ccache
-              make -j
+              make -j$(($(nproc)+1))
             '''
           }
 
@@ -105,9 +114,12 @@ node('docker && android-build') {
           stage 'Pinebook'
           retry(2) {
             sh '''#!/bin/bash
+              export CCACHE_DIR=$PWD/ccache
+              export HOME=$WORKSPACE
+              export USER=jenkins
+
               source build/envsetup.sh
               lunch "${TARGET}"
-              export CCACHE_DIR=$PWD/ccache
               make -j$(($(nproc)+1))
             '''
           }
@@ -130,10 +142,13 @@ node('docker && android-build') {
           stage 'TV'
           retry(2) {
             sh '''#!/bin/bash
+              export CCACHE_DIR=$PWD/ccache
+              export HOME=$WORKSPACE
+              export USER=jenkins
+
               source build/envsetup.sh
               lunch "${TARGET}"
-              export CCACHE_DIR=$PWD/ccache
-              make -j
+              make -j$(($(nproc)+1))
             '''
           }
 
