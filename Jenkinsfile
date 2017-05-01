@@ -79,15 +79,15 @@ node('docker && android-build') {
           '''
         }
 
-        if (params.BUILD_TABLET) {
-          withEnv([
-            "VERSION=$VERSION",
-            'TARGET=tulip_chiphd-userdebug',
-            'USE_CCACHE=true',
-            'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
-            'ANDROID_NO_TEST_CHECK=true'
-          ]) {
-            stage 'Regular'
+        withEnv([
+          "VERSION=$VERSION",
+          'TARGET=tulip_chiphd-userdebug',
+          'USE_CCACHE=true',
+          'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
+        ]) {
+          stage 'Regular'
+          if (params.BUILD_TABLET) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
               export HOME=$WORKSPACE
@@ -120,15 +120,15 @@ node('docker && android-build') {
           }
         }
 
-        if (params.BUILD_PINEBOOK) {
-          withEnv([
-            "VERSION=$VERSION",
-            'TARGET=tulip_chiphd_pinebook-userdebug',
-            'USE_CCACHE=true',
-            'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
-            'ANDROID_NO_TEST_CHECK=true'
-          ]) {
-            stage 'Pinebook'
+        withEnv([
+          "VERSION=$VERSION",
+          'TARGET=tulip_chiphd_pinebook-userdebug',
+          'USE_CCACHE=true',
+          'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
+        ]) {
+          stage 'Pinebook'
+          if (params.BUILD_PINEBOOK) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
               export HOME=$WORKSPACE
@@ -161,15 +161,15 @@ node('docker && android-build') {
           }
         }
 
-        if (params.BUILD_TV) {
-          withEnv([
-            "VERSION=$VERSION",
-            'TARGET=tulip_chiphd_atv-userdebug',
-            'USE_CCACHE=true',
-            'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
-            'ANDROID_NO_TEST_CHECK=true'
-          ]) {
-            stage 'TV'
+        withEnv([
+          "VERSION=$VERSION",
+          'TARGET=tulip_chiphd_atv-userdebug',
+          'USE_CCACHE=true',
+          'ANDROID_JACK_VM_ARGS=-Xmx3g -Dfile.encoding=UTF-8 -XX:+TieredCompilation',
+          'ANDROID_NO_TEST_CHECK=true'
+        ]) {
+          stage 'TV'
+          if (params.BUILD_TV) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
               export HOME=$WORKSPACE
