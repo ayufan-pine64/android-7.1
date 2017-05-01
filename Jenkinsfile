@@ -43,6 +43,7 @@ node('docker && android-build') {
         ]) {
             stage 'Prepare'
             sh '''#!/bin/bash
+              export CCACHE_DIR=$PWD/ccache
               prebuilts/misc/linux-x86/ccache/ccache -M 0 -F 0
               rm -f *.gz
             '''
@@ -83,6 +84,16 @@ node('docker && android-build') {
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
           stage 'Regular'
+          sh '''#!/bin/bash
+            export CCACHE_DIR=$PWD/ccache
+            export HOME=$WORKSPACE
+            export USER=jenkins
+
+            source build/envsetup.sh
+            lunch "${TARGET}"
+            make installclean
+          '''
+
           retry(2) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
@@ -112,6 +123,16 @@ node('docker && android-build') {
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
           stage 'Pinebook'
+          sh '''#!/bin/bash
+            export CCACHE_DIR=$PWD/ccache
+            export HOME=$WORKSPACE
+            export USER=jenkins
+
+            source build/envsetup.sh
+            lunch "${TARGET}"
+            make installclean
+          '''
+
           retry(2) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
@@ -140,6 +161,16 @@ node('docker && android-build') {
           'ANDROID_NO_TEST_CHECK=true'
         ]) {
           stage 'TV'
+          sh '''#!/bin/bash
+            export CCACHE_DIR=$PWD/ccache
+            export HOME=$WORKSPACE
+            export USER=jenkins
+
+            source build/envsetup.sh
+            lunch "${TARGET}"
+            make installclean
+          '''
+
           retry(2) {
             sh '''#!/bin/bash
               export CCACHE_DIR=$PWD/ccache
