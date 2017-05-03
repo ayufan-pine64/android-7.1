@@ -31,7 +31,7 @@ node('docker && android-build') {
         export HOME=$WORKSPACE
         export USER=jenkins
 
-        repo init -u https://android.googlesource.com/platform/manifest -b android-7.1.0_r7 --depth=1
+        repo init -u https://android.googlesource.com/platform/manifest -b android-7.1.2_r11 --depth=1
         rm -rf .repo/local_manifests
         git clone https://github.com/ayufan-pine64/local_manifests -b nougat-7.1 .repo/local_manifests
 
