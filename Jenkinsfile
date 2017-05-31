@@ -118,6 +118,7 @@ node('docker && android-build') {
               lunch "${TARGET}"
               set -xe
               sdcard_image "${JOB_NAME}-v${VERSION}-r${BUILD_NUMBER}.img.gz"
+              sdcard_image "${JOB_NAME}-sopine-v${VERSION}-r${BUILD_NUMBER}.img.gz" "sopine"
             '''
           }
         }
